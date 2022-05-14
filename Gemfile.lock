@@ -1,0 +1,19 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    concurrent-ruby (1.1.10)
+    digest (3.1.0)
+    json (2.6.1)
+    paint (2.2.1)
+
+PLATFORMS
+  x64-mingw-ucrt
+
+DEPENDENCIES
+  concurrent-ruby
+  digest
+  json
+  paint
+
+BUNDLED WITH
+   2.3.8
