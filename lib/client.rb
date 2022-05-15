@@ -14,7 +14,15 @@ class Client
   end
 
   def finished
-    @socket.closed? || ((Time.now - @last_sent_file).to_i >= 60) # Client probably disconnected
+    @socket.closed? # || ((Time.now - @last_sent_file).to_i >= 60) # Client probably disconnected
+  end
+
+  def tell(*args)
+    @socket.send(args.join("\n"), 0)
+  end
+
+  def form_message(*args)
+    args.map { |a| a.to_s }.join("\t")
   end
 
   def start
@@ -31,8 +39,20 @@ class Client
     end
 
     Log.log("Sending files...", Log::Types::SendingFiles)
-    @socket.puts("UPS\t#{diff.size}") # Send over file count
-    puts "sent file count"
+    @socket.puts form_message("UPS", diff.size) # Send over file count
+
+    # Notify client if there needs to be a hard reset
+    if diff.empty?
+      @socket.puts "UPQ"
+      @socket.close
+      return
+    end
+
+    unless diff.grep(/(\.dll|\.exe|\.so)/).empty?
+      @socket.puts "UPH"
+    else
+      @socket.puts "UPC"
+    end
 
     begin
       diff.each do |path|
@@ -42,12 +62,14 @@ class Client
         size = file.length
 
         Log.log("Sending file: #{path}, length: #{file.length}", Log::Types::SendingFile)
-        @socket.send("UPF\t#{path.sub(/\.\//, "")}\t#{size}", 0)
+        tell(
+          form_message("UPF", path.sub(/\.\//, ""), size)
+        )
 
         io = StringIO.new(file)
         until io.eof?
           puts "Sending file chunk: #{path} (#{io.pos}/#{size})"
-          @socket.send(io.read(0xFFFF), 0)
+          tell(io.read(0xFFFF))
         end
 
         @socket.gets # Wait for confirmation
