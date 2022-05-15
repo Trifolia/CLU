@@ -18,7 +18,7 @@ class Client
   end
 
   def tell(*args)
-    @socket.send(args.join("\n"), 0)
+    @socket.send(args.join("\n") + "\n", 0)
   end
 
   def form_message(*args)
